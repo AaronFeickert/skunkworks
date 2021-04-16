@@ -15,7 +15,7 @@ T = n_T**m_T
 N = M*T
 
 # Generate the commitments
-C = [] # commitments
+C = PointVector([]) # commitments
 L = randint(0,N-1) # secret index
 v = random_scalar() # value
 r = random_scalar() # mask
@@ -24,15 +24,15 @@ for i in range(N):
 C[L] = groth.comm(Scalar(0),v,r)
 
 # Identify the subset major and minor indices for L
-k = L / M
+k = L // M
 l = L % M
 if not L == k*M + l:
     raise ArithmeticError('Bad secret index!')
 
 # Prepare offset commitments
-masks_v = []
-masks_r = []
-d = []
+masks_v = ScalarVector([])
+masks_r = ScalarVector([])
+d = PointVector([])
 for i in range(M):
     masks_v.append(random_scalar())
     masks_r.append(random_scalar())
@@ -45,12 +45,12 @@ proof1 = groth.prove_final(proof1,state)[0] # ignore gamma return value for this
 
 # Fiat-Shamir challenges
 prefix = hash_to_scalar(C,d,proof1)
-x = []
+x = ScalarVector([])
 for i in range(M):
     x.append(hash_to_scalar(prefix,i))
 
 # Subset digests
-D = []
+D = PointVector([])
 for i in range(T):
     D.append(multiexp(x,C[i*M:(i+1)*M]))
 digest_d = multiexp(x,d)

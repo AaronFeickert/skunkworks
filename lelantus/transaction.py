@@ -264,15 +264,15 @@ P_old[l] = H2*p
 C_old[l] = com(v,r)
 
 # Generate migration transaction to Alice and verify
-print 'Migrating coin to Alice...'
+print('Migrating coin to Alice...')
 migration = MigrationTransaction(P_old,C_old,l,p,v,r,f,A)
-print 'Verifying...'
+print('Verifying...')
 migration.verify()
 
 # Mint a new coin to Alice and publicly verify
-print 'Minting a new coin to Alice...'
+print('Minting a new coin to Alice...')
 mint = MintTransaction(Scalar(1),A)
-print 'Verifying...'
+print('Verifying...')
 mint.verify()
 
 # Generate other fake coins for testing
@@ -291,20 +291,20 @@ y = [elgamal.decrypt(migration.enc_y,a),elgamal.decrypt(mint.enc_y,a)]
 v = [elgamal.decrypt(migration.enc_v,a),mint.v]
 
 # Alice spends her coins to Bob with change to herself
-print 'Spending coins to Bob with change...'
+print('Spending coins to Bob with change...')
 spend = SpendTransaction(Coins,n,m,[a*y[i] for i in range(2)],l,v,r,[Scalar(2),Scalar(1)],Scalar(1),[B,A])
-print 'Verifying...'
+print('Verifying...')
 spend.verify()
 
 # Bob recovers the coin value, blinder, and private key to churn
-print 'Churning coin to Bob...'
+print('Churning coin to Bob...')
 l = random.randrange(len(Coins)) # index for Bob's coin
 Coins[l] = spend.C[0]
 v = elgamal.decrypt(spend.enc_v[0],b)
 r = elgamal.decrypt(spend.enc_r[0],b)
 y = elgamal.decrypt(spend.enc_y[0],b)
 churn = SpendTransaction(Coins,n,m,[b*y],[l],[v],[r],[Scalar(1)],Scalar(1),[B])
-print 'Verifying...'
+print('Verifying...')
 churn.verify()
 
-print 'Done!'
+print('Done!')

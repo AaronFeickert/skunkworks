@@ -82,7 +82,7 @@ def sum_scalar(s,l):
     while l > 2:
         s = s*s
         r += s*r
-        l /= 2
+        l //= 2
     return r
 
 # Perform an inner-product proof round
@@ -97,7 +97,7 @@ def inner_product(data):
         data.b = data.b[0]
         return
 
-    n /= 2
+    n //= 2
     cL = data.a[:n]**data.b[n:]
     cR = data.a[n:]**data.b[:n]
     data.L.append((data.G[n:]**data.a[:n] + data.H[:n]**data.b[n:] + data.U*cL)*inv8)
@@ -278,7 +278,7 @@ def verify(proofs,N):
         t = proof.t
 
         # get size information
-        M = 2**len(L)/N
+        M = 2**len(L)//N
 
         # weighting factors for batching
         weight_y = random_scalar()
@@ -350,7 +350,7 @@ def verify(proofs,N):
             for j in range(len(L)-1,-1,-1):
                 J = len(W)-j-1
                 base_power = 2**j
-                if index/base_power == 0:
+                if index//base_power == 0:
                     g *= W_inv[J]
                     h *= W[J]
                 else:
@@ -359,7 +359,7 @@ def verify(proofs,N):
                     index -= base_power
 
             g += z
-            h -= (z*(y**i) + (z**(2+i/N))*(Scalar(2)**(i%N)))*((y_inv)**i)
+            h -= (z*(y**i) + (z**(2+i//N))*(Scalar(2)**(i%N)))*((y_inv)**i)
 
             z4[i] += g*weight_z
             z5[i] += h*weight_z
