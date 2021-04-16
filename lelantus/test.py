@@ -92,18 +92,6 @@ class TestSchnorr(unittest.TestCase):
         schnorr.verify(schnorr.prove(random_scalar(),random_scalar(),G,H))
 
 class TestGroth(unittest.TestCase):
-    def test_1(self):
-        v = random_scalar()
-        r = random_scalar()
-        M = [groth.comm(Scalar(0),v,r)]
-        n = 1
-        m = 1
-        l = 0
-        proof,state = groth.prove_initial(M,l,v,r,n,m)
-        state.x = groth.challenge(M,[proof])
-        proof,gammas = groth.prove_final(proof,state)
-        groth.verify(M,proof,n,m,state.x)
-
     def test_2_0(self):
         n = 2
         m = 1
@@ -132,9 +120,9 @@ class TestGroth(unittest.TestCase):
         proof,gammas = groth.prove_final(proof,state)
         groth.verify(M,proof,n,m,state.x)
 
-    def test_8_all(self):
-        n = 2
-        m = 3
+    def test_9_all(self):
+        n = 3
+        m = 2
         N = n**m
         v = [random_scalar()]*N
         r = [random_scalar()]*N

@@ -72,35 +72,43 @@ def com_matrix(v,r):
 def comm(s,v,r):
     return G*s + H1*v + H2*r
 
-# Decompose a value with given base and size
-def decompose(val,base,size,t=int):
-    temp_val = val # for reconstruction testing
-    r = []
-    for i in range(size-1,-1,-1):
-        slot = base**i
-        r.append(int(val/slot))
-        val -= slot*r[-1]
-    r = list(reversed(r))
+# Generator for Gray codes
+# INPUT
+#   N: base
+#   K number of digits
+#   v (optional): if given, the specific value needed
+# OUTPUT
+#   generator for iterated Gray codes
+# NOTES
+#   The initial value is always a series of zeros.
+#   The generator returns the changed digit, the old value, and the value to which it is changed.
+#   To iterate, change the given digit to the given value.
+#   This is useful for efficiently computing coefficients during the verification process.
+#   If a value is provided, the iterator will only return that value's Gray code (not the changes)
+def gray(N,K,v=None):
+    g = [0 for _ in range(K+1)]
+    u = [1 for _ in range(K+1)]
+    changed = [0,0,0] # index, old digit, new digit
 
-    # Reconstruct to ensure correct decomposition
-    if t == int:
-        temp = 0
-    else:
-        temp = Scalar(0)
+    for idx in range(N**K):
+        # Standard iterator
+        if v is None:
+            yield changed
+        # Specific value
+        else:
+            if idx == v:
+                yield g[:-1] # return the given Gray code
+            if idx > v:
+                raise StopIteration # once we have the code, we're done
 
-    for i in range(len(r)):
-        temp += r[i]*base**i
-    if not temp == temp_val:
-        raise ArithmeticError('Decomposition failed!')
-
-    # Return int list or Scalar list
-    if t == int:
-        return r
-
-    s = []
-    for i in r:
-        s.append(Scalar(i))
-    return s
+        i = 0
+        k = g[0] + u[0]
+        while (k >= N or k < 0):
+            u[i] = -u[i]
+            i += 1
+            k = g[i] + u[i]
+        changed = [i,g[i],k]
+        g[i] = k
 
 # Kronecker delta
 def delta(x,y):
@@ -108,17 +116,15 @@ def delta(x,y):
         return Scalar(1)
     return Scalar(0)
 
-# Compute a convolution
-def convolve(x,y,size=None):
-    r = [Scalar(0)]*(len(x)+len(y))
+# Compute a convolution with a degree-one polynomial
+def convolve(x,y):
+    if not len(y) == 2:
+        raise ValueError('Convolution requires a degree-one polynomial!')
+
+    r = [Scalar(0)]*(len(x)+1)
     for i in range(len(x)):
         for j in range(len(y)):
             r[i+j] += x[i]*y[j]
-
-    # Pad with zeros
-    if size is not None and size > len(r):
-        for i in range(size-len(r)):
-            r.append(Scalar(0))
 
     return r
 
@@ -135,6 +141,8 @@ def convolve(x,y,size=None):
 #  internal state
 def prove_initial(M,l,v,r,n,m):
     # Size check
+    if not n > 1:
+        raise ValueError('Must have nontrivial decomposition base!')
     if not len(M) == n**m:
         raise IndexError('Bad size decomposition!')
     N = len(M)
@@ -157,7 +165,7 @@ def prove_initial(M,l,v,r,n,m):
     A = com_matrix(a,rA)
 
     # Commit to decomposition bits
-    decomp_l = decompose(l,n,m)
+    decomp_l = next(gray(n,m,l))
     sigma = [[None]*n for _ in range(m)]
     for j in range(m):
         for i in range(n):
@@ -179,13 +187,14 @@ def prove_initial(M,l,v,r,n,m):
     D = com_matrix(a_sq,rD)
 
     # Compute p coefficients
-    p = [[Scalar(0)]*m for _ in range(N)]
-    for k in range(N):
-        decomp_k = decompose(k,n,m)
+    p = [[] for _ in range(N)]
+    decomp_k = [0]*m
+    for k,gray_update in enumerate(gray(n,m)):
+        decomp_k[gray_update[0]] = gray_update[2]
         p[k] = [a[0][decomp_k[0]],delta(decomp_l[0],decomp_k[0])]
         
         for j in range(1,m):
-            p[k] = convolve(p[k],[a[j][decomp_k[j]],delta(decomp_l[j],decomp_k[j])],m)
+            p[k] = convolve(p[k],[a[j][decomp_k[j]],delta(decomp_l[j],decomp_k[j])])
 
     # Generate proof values
     G = [dumb25519.Z]*m
@@ -312,13 +321,17 @@ def verify(M,proof,n,m,x):
     if not com_matrix(fx,zC) == C*x + D:
         raise ArithmeticError('Failed C/D check!')
 
+    # Initial coefficient product (always zero-index values)
+    s = Scalar(1)
+    for j in range(m):
+        s *= f[j][0]
+
     # Commitment check
     R = dumb25519.Z
-    for i in range(N):
-        s = Scalar(1)
-        decomp_i = decompose(i,n,m)
-        for j in range(m):
-            s *= f[j][decomp_i[j]]
+    for i,gray_update in enumerate(gray(n,m)):
+        # Update the coefficient product (these inversions can be batched)
+        if i > 0:
+            s *= f[gray_update[0]][gray_update[1]].invert()*f[gray_update[0]][gray_update[2]]
         R += M[i]*s
     for j in range(m):
         R -= (G[j] + Q[j])*x**j

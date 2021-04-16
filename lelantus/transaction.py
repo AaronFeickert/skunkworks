@@ -276,8 +276,8 @@ print('Verifying...')
 mint.verify()
 
 # Generate other fake coins for testing
-n = 2
-m = 3
+n = 3
+m = 2
 Coins = [random_point()]*(n**m)
 l = [0,0]
 while l[0] == l[1]:
