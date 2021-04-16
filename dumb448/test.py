@@ -12,16 +12,12 @@ class TestScalar(unittest.TestCase):
         self.assertEqual(Scalar('f24458ab92c27823558fc58d72c26c219036d6ae49db4ec4e923ca7cffffffffffffffffffffffffffffffffffffffffffffffffffffff3f00'),Scalar(l-1))
 
         # Test construction using x = 1
-        s = Scalar(int(1))
-        self.assertEqual(s,Scalar(long(1)))
-        self.assertEqual(s.x,int(1))
-        self.assertEqual(s.x,long(1))
+        s = Scalar(1)
+        self.assertEqual(s.x,1)
 
         # Test construction using x = l = 0
-        s = Scalar(int(l))
-        self.assertEqual(s,Scalar(long(l)))
-        self.assertEqual(s.x,int(0))
-        self.assertEqual(s.x,long(0))
+        s = Scalar(l)
+        self.assertEqual(s.x,0)
 
         # Test invalid constructions
         with self.assertRaises(TypeError):
@@ -303,8 +299,6 @@ class TestPoint(unittest.TestCase):
 
         # Test construction of zero with coordinates
         self.assertEqual(Point(0,1),Z)
-        self.assertEqual(Point(int(0),int(1)),Z)
-        self.assertEqual(Point(long(0),long(1)),Z)
 
         # Test invalid constructions
         with self.assertRaises(TypeError):
@@ -567,9 +561,7 @@ class TestPointVector(unittest.TestCase):
     def test_repr(self):
         # Test known representation
         self.assertEqual(repr(PointVector([Z,G])),'[010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 14fa30f25b790898adc8d74e2c13bdfdc4397ce61cffd33ad7c2a0051e9c78874098a36c7373ea4b62c7c9563720768824bcb66e71463f6900]')
-        self.assertEqual(str(PointVector([Z,G])),'[010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 14fa30f25b790898adc8d74e2c13bdfdc4397ce61cffd33ad7c2a0051e9c78874098a36c7373ea4b62c7c9563720768824bcb66e71463f6900]')
         self.assertEqual(repr(PointVector()),'[]')
-        self.assertEqual(str(PointVector()),'[]')
 
     def test_neg(self):
         # Test negation
@@ -750,9 +742,7 @@ class TestScalarVector(unittest.TestCase):
     def test_repr(self):
         # Test known representation
         self.assertEqual(repr(ScalarVector([Scalar(0),Scalar(1)])),'[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]')
-        self.assertEqual(str(ScalarVector([Scalar(0),Scalar(1)])),'[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]')
         self.assertEqual(repr(ScalarVector()),'[]')
-        self.assertEqual(str(ScalarVector()),'[]')
 
     def test_invert(self):
         # Test nonzero inversion
@@ -850,19 +840,14 @@ class TestMultiexp(unittest.TestCase):
         P0 = P3[0:0]
 
         # Test valid operations
-        self.assertEqual(multiexp(zip(P3,s3)),Scalar(5)*G)
         self.assertEqual(multiexp(s3,P3),Scalar(5)*G)
         self.assertEqual(multiexp(s2,P2),G)
         self.assertEqual(multiexp(s1,P1),Z)
         self.assertEqual(multiexp(s0,P0),Z)
 
         # Test invalid operations
-        with self.assertRaises(ValueError):
-            multiexp(s3,P3,None)
         with self.assertRaises(TypeError):
             multiexp(P3,s3)
-        with self.assertRaises(TypeError):
-            multiexp(zip(s3,P3))
         with self.assertRaises(TypeError):
             multiexp(P3,s2)
 
