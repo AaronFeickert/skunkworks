@@ -166,21 +166,21 @@ def prove_initial(M,l,v,r,n,m):
 
     # Commit to decomposition bits
     decomp_l = next(gray(n,m,l))
-    sigma = [[None]*n for _ in range(m)]
+    sigma = [[None for _ in range(n)] for _ in range(m)]
     for j in range(m):
         for i in range(n):
             sigma[j][i] = delta(decomp_l[j],i)
     B = com_matrix(sigma,rB)
 
     # Commit to a/sigma relationships
-    a_sigma = [[Scalar(0)]*n for _ in range(m)]
+    a_sigma = [[Scalar(0) for _ in range(n)] for _ in range(m)]
     for j in range(m):
         for i in range(n):
             a_sigma[j][i] = a[j][i]*(Scalar(1) - Scalar(2)*sigma[j][i])
     C = com_matrix(a_sigma,rC)
     
     # Commit to squared a-values
-    a_sq = [[Scalar(0)]*n for _ in range(m)]
+    a_sq = [[Scalar(0) for _ in range(n)] for _ in range(m)]
     for j in range(m):
         for i in range(n):
             a_sq[j][i] = -a[j][i]*a[j][i]
@@ -197,11 +197,11 @@ def prove_initial(M,l,v,r,n,m):
             p[k] = convolve(p[k],[a[j][decomp_k[j]],delta(decomp_l[j],decomp_k[j])])
 
     # Generate proof values
-    G = [dumb25519.Z]*m
-    Q = [dumb25519.Z]*m
-    rho = [None]*m
-    tau = [None]*m
-    gammas = [None]*m
+    G = [dumb25519.Z for _ in range(m)]
+    Q = [dumb25519.Z for _ in range(m)]
+    rho = [None for _ in range(m)]
+    tau = [None for _ in range(m)]
+    gammas = [None for _ in range(m)]
     for j in range(m):
         rho[j] = random_scalar()
         tau[j] = random_scalar()
@@ -258,10 +258,10 @@ def prove_final(proof,state):
     tau = state.tau
     gammas = state.gammas
 
-    f = [[None]*n for _ in range(m)]
+    f = [[None for _ in range(n-1)] for _ in range(m)]
     for j in range(m):
         for i in range(1,n):
-            f[j][i] = sigma[j][i]*x + a[j][i]
+            f[j][i-1] = sigma[j][i]*x + a[j][i]
 
     zA = rB*x + rA
     zC = rC*x + rD
@@ -296,7 +296,7 @@ def verify(M,proof,n,m,x):
     D = proof.D
     G = proof.G
     Q = proof.Q
-    f = proof.f
+    f = [[None for _ in range(n)] for _ in range(m)]
     zA = proof.zA
     zC = proof.zC
     zV = proof.zV
@@ -307,6 +307,7 @@ def verify(M,proof,n,m,x):
     for j in range(m):
         f[j][0] = x
         for i in range(1,n):
+            f[j][i] = proof.f[j][i-1]
             f[j][0] -= f[j][i]
 
     # A/B check
@@ -314,7 +315,7 @@ def verify(M,proof,n,m,x):
         raise ArithmeticError('Failed A/B check!')
 
     # C/D check
-    fx = [[None]*n for _ in range(m)]
+    fx = [[None for _ in range(n)] for _ in range(m)]
     for j in range(m):
         for i in range(n):
             fx[j][i] = f[j][i]*(x-f[j][i])
