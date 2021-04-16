@@ -9,12 +9,12 @@ H = dumb25519.hash_to_point('H')
 
 class TestValidProofs(unittest.TestCase):
     def test_valid_prove_verify(self):
-        print ''
+        print('')
 
         for m in [2,3]: # ring size 4,8
             for spends in range(1,min(3,2**m)+1):
                 for outs in [1,2,3]:
-                    print 'Test parameters (m spends outs):',m,spends,outs
+                    print('Test parameters (m spends outs):',m,spends,outs)
                     l = random.sample(range(2**m),spends) # spend indices
                     r = [random_scalar() for _ in range(spends)] # signing keys
                     s = [random_scalar() for _ in range(spends)] # input commitment blinders
