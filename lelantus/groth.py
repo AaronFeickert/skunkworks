@@ -1,5 +1,5 @@
 from common import *
-from dumb25519 import hash_to_point, random_scalar, Scalar, hash_to_scalar
+from dumb25519 import *
 
 # Internal proof state
 class State:
@@ -197,8 +197,8 @@ def prove_initial(M,l,v,r,n,m):
             p[k] = convolve(p[k],[a[j][decomp_k[j]],delta(decomp_l[j],decomp_k[j])])
 
     # Generate proof values
-    G = [dumb25519.Z for _ in range(m)]
-    Q = [dumb25519.Z for _ in range(m)]
+    G = [Z for _ in range(m)]
+    Q = [Z for _ in range(m)]
     rho = [None for _ in range(m)]
     tau = [None for _ in range(m)]
     gammas = [None for _ in range(m)]
@@ -328,15 +328,20 @@ def verify(M,proof,n,m,x):
         s *= f[j][0]
 
     # Commitment check
-    R = dumb25519.Z
+    scalars = ScalarVector([])
+    points = PointVector([])
     for i,gray_update in enumerate(gray(n,m)):
         # Update the coefficient product (these inversions can be batched)
         if i > 0:
             s *= f[gray_update[0]][gray_update[1]].invert()*f[gray_update[0]][gray_update[2]]
-        R += M[i]*s
+        scalars.append(s)
+        points.append(M[i])
     for j in range(m):
-        R -= (G[j] + Q[j])*x**j
-    if not R == comm(Scalar(0),zV,zR):
+        scalars.append(-x**j)
+        points.append(G[j])
+        scalars.append(-x**j)
+        points.append(Q[j])
+    if not multiexp(scalars,points) == comm(Scalar(0),zV,zR):
         raise ArithmeticError('Failed commitment check!')
 
     return True
