@@ -20,6 +20,15 @@ class State:
 
         self.x = None # Fiat-Shamir challenge
 
+# Recursion data
+class RecursionData:
+    def __init__(self,n,m,f,scalars):
+        self.begin = 0
+        self.end = n**m
+        self.n = n
+        self.f = f
+        self.scalars = scalars
+
 # Proof structure
 class Proof:
     def __init__(self):
@@ -72,43 +81,30 @@ def com_matrix(v,r):
 def comm(s,v,r):
     return G*s + H1*v + H2*r
 
-# Generator for Gray codes
-# INPUT
-#   N: base
-#   K number of digits
-#   v (optional): if given, the specific value needed
-# OUTPUT
-#   generator for iterated Gray codes
-# NOTES
-#   The initial value is always a series of zeros.
-#   The generator returns the changed digit, the old value, and the value to which it is changed.
-#   To iterate, change the given digit to the given value.
-#   This is useful for efficiently computing coefficients during the verification process.
-#   If a value is provided, the iterator will only return that value's Gray code (not the changes)
-def gray(N,K,v=None):
-    g = [0 for _ in range(K+1)]
-    u = [1 for _ in range(K+1)]
-    changed = [0,0,0] # index, old digit, new digit
+# Recursively build commitment scalars
+def recurse(t_,j,data):
+    j -= 1
+    if j == -1:
+        if data.begin < data.end:
+            data.scalars[data.begin] = t_
+            data.begin += 1
+        return
+    
+    for i in range(data.n):
+        t = data.f[j][i]
+        t *= t_
+        recurse(t,j,data)
 
-    for idx in range(N**K):
-        # Standard iterator
-        if v is None:
-            yield changed
-        # Specific value
-        else:
-            if idx == v:
-                yield g[:-1] # return the given Gray code
-            if idx > v:
-                raise StopIteration # once we have the code, we're done
+# Decompose a value with given base and size
+def decompose(val,base,size):
+    r = []
+    for i in range(size-1,-1,-1):
+        slot = base**i
+        r.append(val//slot)
+        val -= slot*r[-1]
+    r = list(reversed(r))
 
-        i = 0
-        k = g[0] + u[0]
-        while (k >= N or k < 0):
-            u[i] = -u[i]
-            i += 1
-            k = g[i] + u[i]
-        changed = [i,g[i],k]
-        g[i] = k
+    return r
 
 # Kronecker delta
 def delta(x,y):
@@ -143,6 +139,8 @@ def prove_initial(M,l,v,r,n,m):
     # Size check
     if not n > 1:
         raise ValueError('Must have nontrivial decomposition base!')
+    if not m > 1:
+        raise ValueError('Must have m > 1 as decomposition exponent!')
     if not len(M) == n**m:
         raise IndexError('Bad size decomposition!')
     N = len(M)
@@ -165,7 +163,7 @@ def prove_initial(M,l,v,r,n,m):
     A = com_matrix(a,rA)
 
     # Commit to decomposition bits
-    decomp_l = next(gray(n,m,l))
+    decomp_l = decompose(l,n,m)
     sigma = [[None for _ in range(n)] for _ in range(m)]
     for j in range(m):
         for i in range(n):
@@ -188,9 +186,8 @@ def prove_initial(M,l,v,r,n,m):
 
     # Compute p coefficients
     p = [[] for _ in range(N)]
-    decomp_k = [0]*m
-    for k,gray_update in enumerate(gray(n,m)):
-        decomp_k[gray_update[0]] = gray_update[2]
+    for k in range(N):
+        decomp_k = decompose(k,n,m)
         p[k] = [a[0][decomp_k[0]],delta(decomp_l[0],decomp_k[0])]
         
         for j in range(1,m):
@@ -322,19 +319,13 @@ def verify(M,proof,n,m,x):
     if not com_matrix(fx,zC) == C*x + D:
         raise ArithmeticError('Failed C/D check!')
 
-    # Initial coefficient product (always zero-index values)
-    s = Scalar(1)
-    for j in range(m):
-        s *= f[j][0]
-
     # Commitment check
     scalars = ScalarVector([])
     points = PointVector([])
-    for i,gray_update in enumerate(gray(n,m)):
-        # Update the coefficient product (these inversions can be batched)
-        if i > 0:
-            s *= f[gray_update[0]][gray_update[1]].invert()*f[gray_update[0]][gray_update[2]]
-        scalars.append(s)
+    s = ScalarVector([Scalar(0) for i in range(N)])
+    recurse(Scalar(1),m,RecursionData(n,m,f,s))
+    for i in range(N):
+        scalars.append(s[i])
         points.append(M[i])
     for j in range(m):
         scalars.append(-x**j)

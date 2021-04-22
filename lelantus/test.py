@@ -92,33 +92,19 @@ class TestSchnorr(unittest.TestCase):
         schnorr.verify(schnorr.prove(random_scalar(),random_scalar(),G,H))
 
 class TestGroth(unittest.TestCase):
-    def test_2_0(self):
+    def test_4_all(self):
         n = 2
-        m = 1
-        l = 0
+        m = 2
         N = n**m
         v = [random_scalar()]*N
         r = [random_scalar()]*N
-        M = [groth.comm(random_scalar(),v[i],r[i]) for i in range(N)]
-        M[l] = groth.comm(Scalar(0),v[l],r[l])
-        proof,state = groth.prove_initial(M,l,v[l],r[l],n,m)
-        state.x = groth.challenge(M,[proof])
-        proof,gammas = groth.prove_final(proof,state)
-        groth.verify(M,proof,n,m,state.x)
-
-    def test_2_1(self):
-        n = 2
-        m = 1
-        l = 1
-        N = n**m
-        v = [random_scalar()]*N
-        r = [random_scalar()]*N
-        M = [groth.comm(random_scalar(),v[i],r[i]) for i in range(N)]
-        M[l] = groth.comm(Scalar(0),v[l],r[l])
-        proof,state = groth.prove_initial(M,l,v[l],r[l],n,m)
-        state.x = groth.challenge(M,[proof])
-        proof,gammas = groth.prove_final(proof,state)
-        groth.verify(M,proof,n,m,state.x)
+        for l in range(N):
+            M = [groth.comm(random_scalar(),v[i],r[i]) for i in range(N)]
+            M[l] = groth.comm(Scalar(0),v[l],r[l])
+            proof,state = groth.prove_initial(M,l,v[l],r[l],n,m)
+            state.x = groth.challenge(M,[proof])
+            proof,gammas = groth.prove_final(proof,state)
+            groth.verify(M,proof,n,m,state.x)
 
     def test_9_all(self):
         n = 3
