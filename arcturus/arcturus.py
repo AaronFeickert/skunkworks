@@ -1,4 +1,5 @@
-# Proof-of-concept implementation of https://github.com/monero-project/research-lab/issues/56
+# Proof-of-concept demonstrating a failure of the hardness assumption of Arcturus: https://eprint.iacr.org/2020/312
+# Uses the method described here: https://github.com/UkoeHB/break-dual-target-dl
 
 from dumb25519 import hash_to_point, random_scalar, Scalar, hash_to_scalar, G, random_point, Z
 from dumb25519 import ScalarVector, PointVector
@@ -25,7 +26,6 @@ class Proof:
         self.zC = None
         self.zR = None # for signing keys and key images
         self.zS = None # for amounts
-        self.seed = None
 
     def __repr__(self):
         temp = '<ArcturusProof> '
@@ -43,6 +43,28 @@ class Proof:
         temp += 'zR:'+repr(self.zR)+'|'
         temp += 'zS:'+repr(self.zS)
         return temp
+
+# Internal prover state
+class State:
+    def __init__(self):
+        self.n = None
+        self.N = None
+        self.m = None
+        self.w = None
+
+        self.rA = None
+        self.rB = None
+        self.rC = None
+        self.rD = None
+
+        self.rho_R = None
+        self.rho_S = None
+
+        self.a = None
+        self.sigma = None
+
+        self.mu = None
+        self.x = None
 
 # Pedersen tensor commitment
 def com_tensor(v,r):
@@ -110,56 +132,30 @@ def convolve(x,y):
 
     return r
 
-# Perform a multi-index commitment-to-zero proof
+# Perform the first part of a multi-index commitment-to-zero proof
 #
 # INPUT
 #  M: public key list
 #  P: input commitment list
 #  Q: output commitment list
+#  J: linking tag list
 #  l: list of indices such that each M[l[u]] is a commitment to zero
-#  r: list of Pedersen blinders for all M[l[u]]
-#  s: list of Pedersen blinders for all P[l[u]]
-#  t: list of Pedersen blinders for all Q[j]
-#  a: list of Pedersen values for all P[l[u]]
-#  b: list of Pedersen values for all Q[j]
-#  m: dimension such that len(M) == 2**m
-#  seed: seed for data hiding (optional)
-#  aux1: auxiliary data to store (optional)
-#  aux2: auxiliary data to store (optional)
 # RETURNS
-#  proof structure
-def prove(M,P,Q,l,r,s,t,a,b,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
+#  partial proof structure, internal proof state
+#  m: dimension such that len(M) == 2**m
+def prove_initial(M,P,Q,J,l,m):
+    state = State()
+
     n = 2 # decomposition base
+    N = n**m
     tr = transcript.Transcript('Arcturus')
-
-    # Commitment list size check
-    if not len(M) == n**m or not len(P) == n**m:
-        raise IndexError('Input size mismatch!')
-    if not len(l) == len(r) or not len(l) == len(s) or not len(l) == len(a):
-        raise IndexError('Input size mismatch!')
-    if not len(Q) == len(t) or not len(Q) == len(b):
-        raise IndexError('Output size mismatch!')
-    N = len(M)
-
-    # Reconstruct the known commitments
     w = len(l)
-    for u in range(w):
-        if not M[l[u]] == r[u]*G or not P[l[u]] == s[u]*G + a[u]*H:
-            raise ValueError('Bad input commitment!')
-    for j in range(len(Q)):
-        if not Q[j] == t[j]*G + b[j]*H:
-            raise ValueError('Bad output commitment!')
-
-    # Construct key images
-    J = []
-    for u in range(w):
-        J.append(r[u].invert()*U)
 
     # Prepare matrices and corresponding blinders
-    rA = random_scalar() if seed is None else hash_to_scalar(seed,M,P,Q,J,'rA') + aux1
-    rB = random_scalar() if seed is None else hash_to_scalar(seed,M,P,Q,J,'rB')
-    rC = random_scalar() if seed is None else hash_to_scalar(seed,M,P,Q,J,'rC')
-    rD = random_scalar() if seed is None else hash_to_scalar(seed,M,P,Q,J,'rD') + aux2
+    rA = random_scalar()
+    rB = random_scalar()
+    rC = random_scalar()
+    rD = random_scalar()
 
     # Commit to zero-sum blinders
     a = [[[random_scalar() for _ in range(n)] for _ in range(m)] for _ in range(w)]
@@ -256,6 +252,55 @@ def prove(M,P,Q,l,r,s,t,a,b,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
     tr.update(Z)
     x = tr.challenge()
 
+    # Internal proof state
+    state.n = n
+    state.N = N
+    state.m = m
+    state.w = w
+
+    state.rA = rA
+    state.rB = rB
+    state.rC = rC
+    state.rD = rD
+
+    state.rho_R = rho_R
+    state.rho_S = rho_S
+
+    state.a = a
+    state.sigma = sigma
+
+    state.mu = mu
+    state.x = x
+
+    return proof, state
+
+# Complete a proof
+#
+# INPUT
+#  r: list of Pedersen blinders for all M[l[u]]
+#  s: list of Pedersen blinders for all P[l[u]]
+#  t: list of Pedersen blinders for all Q[j]
+#  a: list of Pedersen values for all P[l[u]]
+#  b: list of Pedersen values for all Q[j]
+# RETURNS
+#  proof structure
+def prove_final(l,r,s,t,proof,state):
+    sigma = state.sigma
+    a = state.a
+    rA = state.rA
+    rB = state.rB
+    rC = state.rC
+    rD = state.rD
+    mu = state.mu
+    x = state.x
+    rho_R = state.rho_R
+    rho_S = state.rho_S
+
+    n = state.n
+    N = state.N
+    m = state.m
+    w = state.w
+
     # Construct matrix
     f = [[[None for _ in range(n-1)] for _ in range(m)] for _ in range(w)]
     for j in range(m):
@@ -283,7 +328,6 @@ def prove(M,P,Q,l,r,s,t,a,b,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
     proof.zC = zC
     proof.zR = zR
     proof.zS = zS
-    proof.seed = seed
 
     return proof
 
@@ -296,7 +340,7 @@ def prove(M,P,Q,l,r,s,t,a,b,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
 #  proof: proof structure
 #  m: dimension such that len(M) == 2**m
 # RETURNS
-#  auxiliary data if the proof is valid
+#  True if valid
 def verify(M,P,Q,proof,m):
     if not m > 1:
         raise ValueError('Must have m > 1!')
@@ -319,7 +363,6 @@ def verify(M,P,Q,proof,m):
     zC = proof.zC
     zR = proof.zR
     zS = proof.zS
-    seed = proof.seed
 
     # Fiat-Shamir transcript challenge
     tr.update(M)
@@ -350,11 +393,6 @@ def verify(M,P,Q,proof,m):
 
     scalars = ScalarVector([])
     points = PointVector([])
-
-    # Recover hidden data if present
-    if seed is not None:
-        aux1 = zA - (hash_to_scalar(seed,M,P,Q,J,'rB')*x + hash_to_scalar(seed,M,P,Q,J,'rA'))
-        aux2 = zC - (hash_to_scalar(seed,M,P,Q,J,'rC')*x + hash_to_scalar(seed,M,P,Q,J,'rD'))
 
     # Reconstruct tensors
     for j in range(m):
@@ -442,4 +480,4 @@ def verify(M,P,Q,proof,m):
     if not dumb25519.multiexp(scalars,points) == dumb25519.Z:
         raise ArithmeticError('Failed verification!')
 
-    return aux1,aux2
+    return True
