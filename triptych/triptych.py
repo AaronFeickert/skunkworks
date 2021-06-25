@@ -188,9 +188,8 @@ def prove(M,P,l,r,s,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
     for j in range(m):
         for i in range(N):
             X[j] += (M[i]+mu*P[i])*p[i][j]
-            Y[j] += U*p[i][j]
         X[j] += rho[j]*G
-        Y[j] += rho[j]*J
+        Y[j] = rho[j]*J
 
     # Partial proof
     proof = Proof()
