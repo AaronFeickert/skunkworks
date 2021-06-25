@@ -136,7 +136,7 @@ Define $B \equiv \com(\sigma,r_B)$.
 \item Define coefficients $\left\{p_{k,j}\right\}_{k,j=0}^{N-1,m-1}$ such that $$p_k(x) \equiv \prod_{j=0}^{m-1} \left( \sigma_{j,k}x + a_{j,k} \right) = \delta\left(l,k\right)x^m + \sumj p_{k,j}x^j$$ for all $k \in [0,N)$ (using our decomposition notation).
 \item Select random $\left\{\rho_j\right\}_{j=0}^{m-1} \subset \F$.
 \item Define $\{X_j\}_{j=0}^{m-1} \subset \G$ such that: $$X_j \equiv \sumk p_{k,j}M_k + \rho_jG$$
-\item Define $\{Y_j\}_{j=0}^{m-1} \subset \G$ such that: $$Y_j \equiv U \sumk p_{k,j}+ \rho_jJ$$
+\item Define $\{Y_j\}_{j=0}^{m-1} \subset \G$ such that: $$Y_j \equiv \rho_jJ$$
 \end{itemize}
 
 $\underline{\mathcal{P} \to \mathcal{V}:}$ \\
@@ -147,7 +147,7 @@ $\xi \in \{0,1\}^*$ \\
 
 $\underline{\mathcal{P}(\xi):}$
 \begin{itemize}
-\item Define $\left\{f_{j,i}\right\}_{i=1,j}^{n-1,m-1}$ such that $f_{j,i} \equiv \sigma_{j,i}\xi + a_{j,i}$.
+\item Define $\left\{f_{j,i}\right\}_{j=0,i=1}^{m-1,n-1}$ such that $f_{j,i} \equiv \sigma_{j,i}\xi + a_{j,i}$.
 \item Define $z_A \equiv r_A + \xi r_B$ and $z_C \equiv \xi r_C + r_D$.
 \item Define $z \equiv r \xi^m - \sumj \rho_j \xi^j$.
 \end{itemize}
@@ -212,10 +212,9 @@ To show Equation \ref{eqn:x} holds:
 Equation \ref{eqn:y} follows similarly:
 \begin{eqnarray*}
 && U \sumk \left( \prod_{j=0}^{m-1} f_{j,k_j} \right) - \sumj \xi^jY_j - zJ \\
-&=& U \sumk p_k(\xi) - \sumj \xi^j \left( U \sumk p_{k,j} + \rho_jJ \right) - zJ \\
-&=& U \sumk \left( p_k(\xi) - \sumj \xi^j p_{k,j} \right) - \sumj \xi^j \rho_jJ - zJ \\
+&=& U \sumk p_k(\xi) - \sumj \xi^j \rho_jJ - zJ \\
 &=& U \sumk \xi^m \delta(l,k) - \sumj \xi^j \rho_jJ - \left( r\xi^m - \sumj \rho_j\xi^j \right)J \\
-&=& \xi^mU - \sumj \xi^j \rho_jG - \xi^mrJ + \sumj \xi^j \rho_jG \\
+&=& \xi^mU - \sumj \xi^j \rho_jJ - \xi^m rJ + \sumj \xi^j \rho_jJ \\
 &=& 0
 \end{eqnarray*}
 since $J = r^{-1}U$ in a valid proof.
@@ -265,7 +264,7 @@ For the first:
 $$M_l = \sum_{e=0}^m \theta_e\xi_e^m M_l + \sum_{e=0}^m \theta_e \left( \sumj \xi_e^j \overline{X}_j \right) = \left( \sum_{e=0}^m \theta_e z_e \right) G$$
 Hence we extract $r \equiv \sum_{e=0}^m \theta_e z_e$.
 For the second:
-$$U = \sum_{e=0}^m \theta_e\xi_e^m U + \sum_{e=0}^m \theta_e \left( \sumj \xi_e^j \overline{X}_j \right) = \left( \sum_{e=0}^m \theta_e z_e \right) J$$
+$$U = \sum_{e=0}^m \theta_e\xi_e^m U + \sum_{e=0}^m \theta_e \left( \sumj \xi_e^j \overline{Y}_j \right) = \left( \sum_{e=0}^m \theta_e z_e \right) J$$
 This implies that $rJ = U$, as required.
 Hence the protocol is $(m+1)$-special sound, which completes the proof.
 \end{proof}
@@ -467,11 +466,10 @@ $\underline{\mathcal{P}_{\text{par}}\left(\{M_{i,\alpha}\},J;\left(l,\{r_\alpha\
 \item Define $K_\alpha \equiv r_\alpha J$ for $\alpha \in (0,d)$.
 \item Define $\mu_\alpha \equiv \hs\left(\alpha,\{M_{i,\alpha}\},J,\{K_\alpha\}\right)$ for $\alpha \in (0,d)$.
 \item Define $\{X_j\}_{j=0}^{m-1} \subset \G$ such that: $$X_j \equiv \sumk p_{k,j}\left(M_{k,0} + \sum_{\alpha=1}^{d-1} \mu_\alpha M_{k,\alpha}\right) + \rho_jG$$
-\item Define $\{Y_j\}_{j=0}^{m-1} \subset \G$ such that: $$Y_j \equiv \left(U + \sum_{\alpha=1}^{d-1} \mu_\alpha K_\alpha\right)\sumk p_{k,j} + \rho_jG$$
 \end{itemize}
 
 $\underline{\mathcal{P} \to \mathcal{V}:}$ \\
-$\{K_\alpha\},\{X_j\},\{Y_j\}$ \\
+$\{K_\alpha\},\{X_j\}$ \\
 
 $\underline{\mathcal{V} \to \mathcal{P}:}$ \\
 $\xi \in \{0,1\}^*$ \\
@@ -572,10 +570,6 @@ Triptych (this work) & $2\lg(N) + 6$ & $\lg(N) + 3$ & $k(B[2N + 2\lg(N) + 2] + 2
 \label{fig:size}
 \end{figure}
 
-
-\section{Future work}
-It is possible to further extend the Triptych proving system to support proving knowledge of openings of multiple commitments within the \textit{same} anonymity set, while permitting the construction of linking tags for each such opening and demonstrating balance directly within a single proof.
-Such a construction is much more efficient than the present work when built into a transaction protocol, but the security definitions applying to such a construction are still under evaluation.
 
 \bibliographystyle{plain}
 \bibliography{main}
