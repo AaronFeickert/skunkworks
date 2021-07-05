@@ -10,7 +10,7 @@ PRIME_BITS = 256 # bits in primes used for Paillier keys
 # Use the Miller-Rabin test to determine if `n` is probably prime
 #
 # INPUT
-#   n: candidate number (long)
+#   n: candidate number (int)
 # RETURNS
 #   True if probably prime
 #   False otherwise
@@ -26,7 +26,7 @@ def prime(n):
     q = n - 1
     k = 0
     while q % 2 == 0:
-        q /= 2
+        q //= 2
         k += 1
     if not q % 2 == 1 or not n - 1 == q*2**k:
         raise ArithmeticError('Failed to decompose prime candidate')
@@ -48,8 +48,8 @@ def prime(n):
 # Modular inversion
 #
 # INPUT
-#   a: value (long)
-#   b: modulus (long)
+#   a: value (int)
+#   b: modulus (int)
 # RETURNS
 #   `c` such that `a*c == 1 (mod b)`
 def invert(a,b):
@@ -57,7 +57,7 @@ def invert(a,b):
     s0, s1 = 1, 0
     t0, t1 = 0, 1
     while r1 != 0:
-        q = r0 / r1
+        q = r0 // r1
         r0, r1 = r1, r0 - q*r1
         s0, s1 = s1, s0 - q*s1
         t0, t1 = t1, t0 - q*t1
@@ -73,9 +73,9 @@ class PaillierPublicKey:
     # Set up a public key
     #
     # INPUT
-    #   N: modulus (long)
+    #   N: modulus (int)
     def __init__(self,N):
-        if not isinstance(N,long):
+        if not isinstance(N,int):
             raise TypeError('Bad public key!')
         self.N = N
 
@@ -84,7 +84,7 @@ class PaillierPublicKey:
     # INPUT
     #   m: message (Scalar)
     # RETURNS
-    #   ciphertext message (long)
+    #   ciphertext message (int)
     def encrypt(self,m):
         if not isinstance(m,Scalar):
             raise TypeError('Bad message!')
@@ -120,18 +120,18 @@ class PaillierPrivateKey:
     # Get the public key
     #
     # RETURNS
-    #   public key (long)
+    #   public key (int)
     def get_public(self):
         return PaillierPublicKey(self.N)
 
     # Decrypt a message
     #
     # INPUT
-    #   c: message (long)
+    #   c: message (int)
     # RETURNS
     #   plaintext message (Scalar)
     def decrypt(self,c):
-        if not isinstance(c,long):
+        if not isinstance(c,int):
             raise TypeError('Bad message!')
 
-        return Scalar(((pow(c,self.phi,self.N**2) - 1)/self.N * invert(self.phi,self.N)) % self.N)
+        return Scalar(((pow(c,self.phi,self.N**2) - 1)//self.N * invert(self.phi,self.N)) % self.N)

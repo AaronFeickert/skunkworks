@@ -4,7 +4,7 @@ from player import *
 from dumb25519 import *
 
 # Create shares and players
-print 'Distributing shares...'
+print('Distributing shares...')
 shares = []
 players = []
 for i in range(PLAYERS):
@@ -12,7 +12,7 @@ for i in range(PLAYERS):
     players.append(Player(shares[i],i))
 
 # Fetch commitments
-print 'Fetching commitments...'
+print('Fetching commitments...')
 for i in range(PLAYERS):
     for j in range(PLAYERS):
         if i == j:
@@ -20,7 +20,7 @@ for i in range(PLAYERS):
         players[i].fetch_commitment(players[j])
 
 # Fetch conversions
-print 'Fetching conversions...'
+print('Fetching conversions...')
 for i in range(PLAYERS):
     for j in range(PLAYERS):
         if i == j:
@@ -28,7 +28,7 @@ for i in range(PLAYERS):
         players[i].fetch_conversion(players[j])
 
 # Fetch local deltas
-print 'Fetching local deltas...'
+print('Fetching local deltas...')
 for i in range(PLAYERS):
     for j in range(PLAYERS):
         if i == j:
@@ -36,7 +36,7 @@ for i in range(PLAYERS):
         players[i].fetch_local_delta(players[j])
 
 # Fetch decommits
-print 'Fetching decommits...'
+print('Fetching decommits...')
 for i in range(PLAYERS):
     for j in range(PLAYERS):
         if i == j:
@@ -44,7 +44,7 @@ for i in range(PLAYERS):
         players[i].fetch_decommit(players[j])
 
 # Check result
-print 'Checking final inversion result...'
+print('Checking final inversion result...')
 total_shares = Scalar(0)
 for i in range(PLAYERS):
     total_shares += shares[i]

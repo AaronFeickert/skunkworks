@@ -130,7 +130,7 @@ class Player:
             raise TypeError('Bad friend!')
 
         c = friend.get_conversion_reply(self.public_key.encrypt(self.x),self)
-        if not isinstance(c,long):
+        if not isinstance(c,int):
             raise TypeError('Bad share conversion reply!')
 
         self.alpha[friend.get_ident()] = self.private_key.decrypt(c)
@@ -153,12 +153,12 @@ class Player:
     # Get a share conversion reply
     #
     # INPUT
-    #   c: conversion message (long)
+    #   c: conversion message (int)
     #   friend: other player for exchange (Player)
     # RETURNS
-    #   share conversion reply (long)
+    #   share conversion reply (int)
     def get_conversion_reply(self,c,friend):
-        if not isinstance(c,long):
+        if not isinstance(c,int):
             raise TypeError('Bad share conversion message!')
         if not isinstance(friend,Player):
             raise TypeError('Bad friend!')
