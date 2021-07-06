@@ -107,7 +107,7 @@ Note in particular that Pedersen matrix commitments are similarly homomorphic.
 For integers or field elements $i,j$, the Kronecker delta function $\delta(i,j)$ evaluates to $1$ if $i=j$ and $0$ otherwise, where the output is taken to be in the appropriate set.
 
 We sometimes use index subscript notation of the form $i_j$ to indicate the $j$ digit of $i$, where such a decomposition of $i$ is taken base $n$ with padded length $m$:
-$$\sum_{j=0}^m i_j n^j = i$$
+$$\sum_{j=0}^{m-1} i_j n^j = i$$
 This notation will be specified explicitly where confusion may occur.
 
 
@@ -129,11 +129,11 @@ $\underline{\mathcal{P}_{\text{link}}(\{M_i\},J;(l,r)):}$
 \begin{itemize}
 \item Select random $r_A \in \F$ and $\left\{a_{j,i}\right\}_{i=1,j=0}^{n-1,m-1} \subset \F$.
 Set $$\{a_{j,0}\}_{j=0}^{m-1} \equiv -\sum_{i=1}^{n-1} a_{j,i}$$ and define $A \equiv \com(a,r_A)$.
-\item Define $\left\{\sigma_{j,i}\right\}_{i,j=0}^{n-1,j-1} \subset \F$ such that $\sigma_{j,i} \equiv \delta\left(l_j,i\right)$ (using our decomposition notation), and choose random $r_B \in \F$.
+\item Define $\left\{\sigma_{j,i}\right\}_{i,j=0}^{n-1,m-1} \subset \F$ such that $\sigma_{j,i} \equiv \delta\left(l_j,i\right)$ (using our decomposition notation), and choose random $r_B \in \F$.
 Define $B \equiv \com(\sigma,r_B)$.
 \item Select random $r_C \in \F$, and define $C \equiv \com(a(1-2\sigma), r_C)$.
 \item Select random $r_D \in \F$, and define $D \equiv \com(-a^2, r_D)$.
-\item Define coefficients $\left\{p_{k,j}\right\}_{k,j=0}^{N-1,m-1}$ such that $$p_k(x) \equiv \prod_{j=0}^{m-1} \left( \sigma_{j,k}x + a_{j,k} \right) = \delta\left(l,k\right)x^m + \sumj p_{k,j}x^j$$ for all $k \in [0,N)$ (using our decomposition notation).
+\item Define coefficients $\left\{p_{k,j}\right\}_{k,j=0}^{N-1,m-1}$ such that $$p_k(x) \equiv \prod_{j=0}^{m-1} \left( \sigma_{j,k_j}x + a_{j,k_j} \right) = \delta\left(l,k\right)x^m + \sumj p_{k,j}x^j$$ for all $k \in [0,N)$ (using our decomposition notation).
 \item Select random $\left\{\rho_j\right\}_{j=0}^{m-1} \subset \F$.
 \item Define $\{X_j\}_{j=0}^{m-1} \subset \G$ such that: $$X_j \equiv \sumk p_{k,j}M_k + \rho_jG$$
 \item Define $\{Y_j\}_{j=0}^{m-1} \subset \G$ such that: $$Y_j \equiv \rho_jJ$$
@@ -244,7 +244,7 @@ From the $3$-special soundness in \cite{bootle} and $m > 1$ we have valid extrac
 $$f^{(e)}_{j,i} = \sigma_{j,i}\xi_e + a_{j,i}$$
 for all $e \in [0,m]$.
 Using the extracted values, compute
-$$p_k(\xi) \equiv \prod_{j=0}^{m-1} \left( \sigma_{j,k}\xi + a_{j,k} \right)$$
+$$p_k(\xi) \equiv \prod_{j=0}^{m-1} \left( \sigma_{j,k_j}\xi + a_{j,k_j} \right)$$
 for all $k \in [0,N)$.
 Extraction of $\{\sigma_{j,i}\}_{j,i=0}^{m-1,n-1}$ immediately yields the signing index $l$.
 
@@ -575,3 +575,4 @@ Triptych (this work) & $2\lg(N) + 6$ & $\lg(N) + 3$ & $k(B[2N + 2\lg(N) + 2] + 2
 \bibliography{main}
 
 \end{document}
+
