@@ -20,7 +20,7 @@ class Proof:
         self.zA = None
         self.zC = None
         self.z = None
-        self.seed = None
+        self.embeds = None # not public data; included here for convenience only
 
     def __repr__(self):
         temp = '<TriptychProof> '
@@ -112,12 +112,11 @@ def convolve(x,y):
 #  r: Pedersen blinder for M[l]
 #  s: Pedersen blinder for P[l]
 #  m: dimension such that len(M) = len(P) == 2**m
-#  seed: seed for data hiding (optional)
-#  aux1: auxiliary data to store (optional)
-#  aux2: auxiliary data to store (optional)
+#  embeds: blinding factors used for data embedding (2 elements, optional)
+#  aux: auxiliary data to store (optional)
 # RETURNS
 #  proof structure
-def prove(M,P,l,r,s,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
+def prove(M,P,l,r,s,m,embeds=None,aux=Scalar(0)):
     n = 2 # decomposition base
     tr = transcript.Transcript('Triptych proof')
 
@@ -135,10 +134,10 @@ def prove(M,P,l,r,s,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
     K = s*J
 
     # Prepare matrices and corresponding blinders
-    rA = random_scalar() if seed is None else hash_to_scalar(seed,M,P,J,K,'rA') + aux1
-    rB = random_scalar() if seed is None else hash_to_scalar(seed,M,P,J,K,'rB')
-    rC = random_scalar() if seed is None else hash_to_scalar(seed,M,P,J,K,'rC')
-    rD = random_scalar() if seed is None else hash_to_scalar(seed,M,P,J,K,'rD') + aux2
+    rA = random_scalar()
+    rB = random_scalar()
+    rC = random_scalar() if embeds is None else embeds[0]
+    rD = random_scalar() if embeds is None else embeds[1] + aux
 
     # Commit to zero-sum blinders
     a = [[random_scalar() for _ in range(n)] for _ in range(m)]
@@ -232,7 +231,6 @@ def prove(M,P,l,r,s,m,seed=None,aux1=Scalar(0),aux2=Scalar(0)):
     proof.zA = zA
     proof.zC = zC
     proof.z = z
-    proof.seed = seed
 
     return proof
 
@@ -293,7 +291,7 @@ def verify(M,P,proofs,m):
         zA = proof.zA
         zC = proof.zC
         z = proof.z
-        seed = proof.seed
+        embeds = proof.embeds
 
         # Fiat-Shamir transcript challenge
         mu = hash_to_scalar(M,P,J,K,A,B,C,D)
@@ -317,12 +315,10 @@ def verify(M,P,proofs,m):
                 f[j][0] -= f[j][i]
 
         # Recover hidden data if present
-        aux1 = None
-        aux2 = None
-        if seed is not None:
-            aux1 = zA - (hash_to_scalar(seed,M,P,J,K,'rB')*x + hash_to_scalar(seed,M,P,J,K,'rA'))
-            aux2 = zC - (hash_to_scalar(seed,M,P,J,K,'rC')*x + hash_to_scalar(seed,M,P,J,K,'rD'))
-        aux.append([aux1,aux2])
+        if embeds is not None:
+            aux.append(zC - embeds[0]*x - embeds[1])
+        else:
+            aux.append(None)
 
         # Gi
         for j in range(m):
