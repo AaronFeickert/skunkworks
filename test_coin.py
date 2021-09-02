@@ -16,18 +16,23 @@ class TestCoin(unittest.TestCase):
 		value = randrange(0,2**coin_params.N)
 		memo = 'Test memo'
 
-		# Generate the coin
-		coin_ = coin.Coin(coin_params,public,value,memo,True)
+		for is_mint in [True,False]:
+			# Generate the coin
+			coin_ = coin.Coin(coin_params,public,value,memo,is_mint,True)
 
-		# Identify
-		coin_.identify(coin_params,public,incoming)
+			# Identify
+			coin_.identify(coin_params,public,incoming)
+			self.assertEqual(int(coin_.value),value)
+			self.assertEqual(coin_.memo,memo)
 
-		# Recover
-		coin_.recover(coin_params,public,full)
+			# Recover
+			coin_.recover(coin_params,public,full)
+			self.assertEqual(int(coin_.value),value)
+			self.assertEqual(coin_.memo,memo)
 
-		# Serial number and tag correctness
-		self.assertEqual(coin_.s*coin_params.G + spend.r*coin_params.F,coin_.S)
-		self.assertEqual(coin_.s*coin_.T,coin_params.H)
+			# Serial number and tag correctness
+			self.assertEqual(coin_.s*coin_params.G + spend.r*coin_params.F,coin_.S)
+			self.assertEqual(coin_.s*coin_.T,coin_params.H)
 
 if __name__ == '__main__':
 	unittest.main()

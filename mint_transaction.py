@@ -39,6 +39,7 @@ class MintTransaction:
 			public,
 			value,
 			memo,
+			True,
 			True
 		)
 		self.value = value
@@ -59,12 +60,6 @@ class MintTransaction:
 		if self.value < 0 or self.value >= 2**params.N:
 			raise ValueError('Bad value for coin value!')
 		
-		# Check output proof
-		bpplus.verify(
-			[bpplus.RangeStatement(bpplus.RangeParameters(params.F,params.G,params.N),PointVector([self.output.C]))],
-			[self.output.range]
-		)
-
 		# Check balance
 		schnorr.verify(
 			schnorr.SchnorrStatement(

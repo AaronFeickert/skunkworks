@@ -32,11 +32,11 @@ class ProtocolParameters:
 		self.m = m
 
 class SpendTransaction:
-	def __init__(self,params,delegation,spend,inputs,indexes,fee,outputs):
+	def __init__(self,params,full,spend,inputs,indexes,fee,outputs):
 		if not isinstance(params,ProtocolParameters):
 			raise TypeError('Bad type for parameters!')
-		if not isinstance(delegation,address.ProofDelegationKey):
-			raise TypeError('Bad type for delegation key!')
+		if not isinstance(full,address.FullViewKey):
+			raise TypeError('Bad type for full view key!')
 		if not isinstance(spend,address.SpendKey):
 			raise TypeError('Bad type for spend key!')
 		for input in inputs:
@@ -73,12 +73,8 @@ class SpendTransaction:
 			K_der = spend.s1*input.K
 
 			# Serial number commitment offset
-			S1 = input.s*params.G - hash_to_scalar('ser1',input.s,delegation.D)*params.F + delegation.D
-			self.S1.append(S1)
-
-			# Value commitment offset
-			C1 = input.value*params.G + hash_to_scalar('val1',input.s,delegation.D)*params.F
-			self.C1.append(C1)
+			self.S1.append(input.delegation.S1)
+			self.C1.append(input.delegation.C1)
 
 			# Tag
 			self.T.append(input.T)
@@ -87,20 +83,20 @@ class SpendTransaction:
 			self.parallel.append(parallel.prove(
 				parallel.ParallelStatement(
 					parallel.ParallelParameters(params.F,params.n,params.m),
-					PointVector([input.S - S1 for input in inputs]),
-					PointVector([input.C - C1 for input in inputs])
+					PointVector([input.S - self.S1[u] for input in inputs]),
+					PointVector([input.C - self.C1[u] for input in inputs])
 				),
 				parallel.ParallelWitness(
 					indexes[u],
-					hash_to_scalar('ser1',input.s,delegation.D),
-					hash_to_scalar('val',K_der) - hash_to_scalar('val1',input.s,delegation.D)
+					input.delegation.s1,
+					input.delegation.c1,
 				)
 			))
 
 			# Modified Chaum-Pedersen proof
 			self.chaum.append(chaum.prove(
-				chaum.ChaumStatement(chaum.ChaumParameters(params.G,params.F,params.H),S1,input.T),
-				chaum.ChaumWitness(input.s,spend.r - hash_to_scalar('ser1',input.s,delegation.D))
+				chaum.ChaumStatement(chaum.ChaumParameters(params.G,params.F,params.H),self.S1[u],input.T),
+				chaum.ChaumWitness(input.s,spend.r - hash_to_scalar('ser1',input.delegation.id,input.s,full.s1,full.s2))
 			))
 		
 		# Balance statement input value
@@ -114,7 +110,8 @@ class SpendTransaction:
 		# Balance witness
 		b_w = Scalar(0)
 		for u in range(w):
-			b_w += hash_to_scalar('val1',inputs[indexes[u]].s,delegation.D)
+			input = inputs[indexes[u]]
+			b_w += hash_to_scalar('val1',input.delegation.id,input.s,full.s1,full.s2)
 		for j in range(t):
 			b_w -= hash_to_scalar('val',outputs[j].k*outputs[j].Q1)
 

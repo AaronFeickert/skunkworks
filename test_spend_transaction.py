@@ -9,15 +9,20 @@ class TestSpend(unittest.TestCase):
 	def test_spend(self):
 		n = 2
 		m = 2
-		w = 3 # spends
-		t = 2 # outputs
+		N = 4
+		input_values = [1,2,3]
+		output_values = [2,3]
+		fee = sum(input_values) - sum(output_values)
+		w = len(input_values)
+		t = len(output_values)
+		delegation_id = 1
 
 		self.assertGreater(n,1)
 		self.assertGreater(m,1)
 		self.assertGreaterEqual(n**m,w)
 		self.assertGreaterEqual(t,1)
 
-		protocol_params = spend_transaction.ProtocolParameters(random_point(),random_point(),random_point(),4,n,m)
+		protocol_params = spend_transaction.ProtocolParameters(random_point(),random_point(),random_point(),N,n,m)
 		address_params = address.AddressParameters(protocol_params.G,protocol_params.F)
 		coin_params = coin.CoinParameters(protocol_params.G,protocol_params.F,protocol_params.H,protocol_params.N)
 
@@ -26,39 +31,38 @@ class TestSpend(unittest.TestCase):
 
 		# Generate the input set and real coins
 		inputs = []
-		input_value = 0
 		for _ in range(protocol_params.n**protocol_params.m):
-			inputs.append(coin.Coin(coin_params,public,randrange(0,2**coin_params.N),'Input memo'))
+			inputs.append(coin.Coin(coin_params,public,randrange(0,2**coin_params.N),'Input memo',False,False))
 		l = sample(range(len(inputs)),w)
 		for u in range(w):
 			inputs[l[u]] = coin.Coin(
 				coin_params,
 				public,
-				randrange(0,2**coin_params.N),
-				'Spend memo'
+				input_values[u],
+				'Spend memo',
+				False,
+				False
 			)
 			inputs[l[u]].recover(coin_params,public,full)
-			input_value += int(inputs[l[u]].value)
+			inputs[l[u]].delegate(coin_params,full,delegation,delegation_id)
 
 		# Generate the output coins and fee
 		outputs = []
-		output_value = 0
 		for j in range(t):
 			# Range is restricted to make balance easier for this example
 			outputs.append(coin.Coin(
 				coin_params,
 				public,
-				randrange(0,2**(coin_params.N-1)),
+				output_values[j],
 				'Output memo',
+				False,
 				True
 			))
-			output_value += int(outputs[j].value)
-		fee = input_value - output_value
 
 		# Generate the spend transaction
 		transaction = spend_transaction.SpendTransaction(
 			protocol_params,
-			delegation,
+			full,
 			spend,
 			inputs,
 			l,
